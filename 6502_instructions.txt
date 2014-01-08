@@ -1,0 +1,15 @@
+var instructions = ['ADC', 'AND', 'ASL', 'BCC', 'BCS', 'BEQ', 'BIT', 'BMI', 'BNE', 'BPL',
+	'BRK', 'BVC', 'BVC', 'CLC', 'CLD', 'CLI', 'CLV', 'CMP', 'CPX', 'CPY', 'DEC', 'DEX',
+	'DEY', 'EOR', 'INC', 'INX', 'INY', 'JMP', 'JSR', 'LDA', 'LDX', 'LDY', 'LSR', 'NOP',
+	'ORA', 'PHA', 'PHP', 'PLA', 'PLP', 'ROL', 'ROR', 'RTI', 'RTS', 'SBC', 'SEC', 'SED',
+	'SEI', 'STA', 'STX', 'STY', 'TAX', 'TAY', 'TSX', 'TXA', 'TXS', 'TYA'];
+	
+var registors = ['A', 'X', 'Y', 'C', 'P', 'S'];
+var addressing_mode = ['implicit', 'accumulator', 'immediate', 'zero page, X', 
+	'zero page, Y', 'absolute', 'absolute, X', 'absolute, Y',
+	'indirect', 'indexed indirect', 'indirect indexed'];
+	
+var flags = ['N', 'Z', 'C', 'I', 'D', 'V'];
+var flag_definition = { N: 'negate', Z: 'zero', C: 'carry', I: 'interrupt', D: 'direction',
+	V: 'auxiliary carry'};
+	

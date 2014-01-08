@@ -1,0 +1,123 @@
+6502 Instruction Set
+
+Registers
+A	Accumulator
+X,Y	Index Registers
+SP	Stack Pointer
+PC	Program Counter
+
+ADC, AND, ASL
+BCC, BCS, BEQ, BIT, BMI, BNE, BPL, BRK, BVC, BVS
+CLC, CLD, CLI, CLV, CMP, CPX, CPY
+DEC, DEX, DEY
+EOR
+INC, INX, INY
+JMP, JSR
+LDA, LDX, LDY, LSR
+NOP
+ORA
+PHA, PHP, PLA, PLP
+ROL, ROR, RTI, RTS
+SBC, SEC, SED, SEI, STA, STX, STY
+TAX, TAY, TSX, TXA, TXS, TYA
+
+PAGES
+Apple ][ 使用 6502 微處理器，6502 的定址能力是 8-bit，搭配上 RSTR (Row Strobe) 及 CSTR (Column Strobe)，
+可以
+
+Page 0 作為常數 CONSTANT 使用。
+Page 1 作為硬體堆疊區域
+Page 2 作為鍵盤輸入緩衝區域。
+Page 3 作為插斷向量。$03D0~$03EF 是由 DOS 使用。
+Page 4~Page 7 及 Page 11
+
+Page 0
+Apple ][ 監督程式利用第零頁從 32($20) 到 73($49) 的位置為一般功能和正常操作時使用。位置 74-77 ($4A-4D) 
+監督程式沒有用到。位置 78-79($4E-4F) 被修改以提供一隨機數的開始點以使應用程式使用。
+
+Page Zero Fields
+譯註：(x)表示 x 所指位置的內容
+十進位  十六進位  監督程式
+位  址  位   址  符   號  說    明
+-----  -------  ------  ----------------------
+00	   $00  	LOC0	當電腦電源打開時，自動開始的監
+01     $01      LOC1    督程式在產生自動磁碟靴帶功能(
+			automatic disk bootstrap function)時，
+			使用這些位置作為間接定址(indirect addressing)，
+			而槽的位址(slot addresses)被逐一檢查，從槽7往下
+			到槽1--以判斷出那一個磁碟控制器存在。如果某一個被
+			發現，則經由 $00-01 執行一個間接跳躍(Jump
+			Indirect)，以使起動這靴帶動作。
+32	   $20	    	WNDLFT  捲動畫面的左邊行位：(即游標出現的
+ 			水平位置)。範圍是 0 到 39($27)。
+ 			本欄僅在 VTABZ 用到，VTABZ 設定
+ 			BASL，H為對應於 CV 和 WNDLFT 的
+ 			記憶體位置。(由使用者程式改變)其內容
+ 			在下一個捲頁動作(scroll operation)
+ 			清除到頁結尾的動作，或 carriage return
+ 			輸出時，才開始變成有作用。CH 存著游標
+ 			(cursor) 相對於 (WNDLFT) 的水平位置。
+ 			改變了 WNDLFT 的內容之後，再 CALL VTAB
+ 			或印一個 carriage return 到螢幕時，將
+ 			使 WNDLFT 產生效用。
+33	   $22	   WNDTOP 	捲動畫面的頂列(top line)
+35	   $23	   WNDBTM	捲頁畫面的底列
+36	   $24	   CH		距 WNDLFT 的位移，此處為下一個送到螢幕
+				的字元要放置的地方。範圍是 0 到
+				(WNDWDTH)-1。在螢幕輸出常規 STOADV
+				將一個字元放到螢幕區域，以當作正常字元
+				輸出的一部份之後，CH 加 1 並與 WNDWDTH
+				比較。如果 CH 不比 WNDWDTH 小時，則一個
+				carriage return 將被模擬產生。
+				注意 CH 是被 GETLN 等常規使用，以把鍵盤
+				輸入在螢幕上顯現。
+37	   $25	   CV		下一個字元應被寫到螢幕上的重直位置(vertical
+				screen position, 第幾列 line number):
+				範圍是 0 到 23($17)。CV 的內容是相對於
+				螢幕的頂端，而不是捲頁畫面的頂端。這個值可以
+				經由"把希望的列號碼載入 A 暫存器且叫用 TABY
+				而設定。也可經由 POKE 把列號存入 CV，然後
+				叫用 VTAB 而設定。一個字元宜正貯存在螢幕區域
+				是使用 BASL, H 以得到列號，而不是使用 CV。
+				上面叫用 VTAB 或 TABV 是根據 CV (和 WNDLFT)
+				來設定 BASL, H，以使能馬上供未來參考之用。
+				如果 CV 是在 WNDBTM 或者位於 WNDBTM 下方，在
+						carriage returns 經過時，CV 仍維持在目前的
+				螢幕列上，而捲頁畫面的內容將每次被往上捲動。
+38	   $26	   GBASL	螢幕區域內的記憶體位址。本欄是
+39	   $27	   GBASH	由 GBASCALC 常規設定到適當的記憶體位置，以符合
+				在 A 暫存器內所指明的列號碼。看位於 $2E 的 MASK。
+40	   $28	   BASL		這兩個位元組的欄位是個記憶體位址，它是在捲頁
+41	   $29	   BASH		畫面內目前文字列左端字元的位置。其內容為 CV 和
+				WNDLFT 的一個函數。
+				本欄是由 BASCALC 常規來設定，以指出 "A 暫存器
+				內所指的螢幕列的左端字元的記憶體位址。通常是由
+				VTAB 常規來叫用 BASCALC，然後 VTAB 再把
+				(WNDLFT) 加到 BASL, H，使它們指向捲頁畫面列
+				的左端位置。
+42	   $2A	   	BAS2L 這兩個位元組僅在一個捲動動作時，才被當做一個工作區域，
+43	   $2B	   	BAS2H 它是一個目的地列的指標(destination line pointer)，
+			在每一列往上移動時使用。
+44	   $2C	   H2		由 HLINE 常規所延長的水平列之右端端點；範圍是
+				0 到 39($27)。這個位元組是由叫用主程式(calling
+				program)在叫用 HLINF 之前，先行設定好。
+44	   $2C	   LMNEM	兩個位元組指標(LMNEM, RMNEM) 的低位元組，此
+				指標給反組合程式 (Disassembler) 當做索引 (index)
+				指到助憶符號表 (mnemonic table)。
+44	   $2C	   RTNL		舊型監督程式的指令追踪常規使用的儲存區。
+				由 VLINE 常規所延長的垂直行之底端：在混合螢幕
+				(mixed screen) 而言，其範圍是 0 到 39($27)。
+				在全螢幕 (full screen) 圖形，其範圍是 0 到 47($2F)。
+				這個位元組在 VLINE 被叫用前，必須先被設定。注意
+				當清除螢幕 (clear screen) (CLRSCR) 常規用 VLINE
+						去清除螢幕時，會用到這個位元組。
+44	   $2C	   RMNEM	與 LMNEM 一起被反組合程式 (Disassembler) 使用。
+						作為助憶符號表(mnemonic table)的表索引(table idnex)。
+44	   $2C	   RTNH		與 RTNL 一起被舊型監督程式的指令追踪常規當作
+				一個貯存區域 (save area) 使用。
+46	   $2E	   MASK		以此標誌，這個位置由 PLOT 使用，根據此點在由 GBASL,H
+				指標所代表的兩條水平畫線的高部份或低部份，以決定它是
+				$0F 或 $F0。每個 (GBASL),Y 型式的位置在螢幕上含有
+				兩個點，其一點是在一點上面。MASK 是用來設定適當的一個，
+				而留下另一個不被改變。
+46	   $2E	   FORMAT	利用這個標誌，反組合程式使用此位元組當做碼的暫時性
